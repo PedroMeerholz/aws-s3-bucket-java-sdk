@@ -1,6 +1,7 @@
 package io.github.pedromeerholz.api;
 
 import io.github.pedromeerholz.aws.S3RequestHandler;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +15,12 @@ public class FileController {
     }
 
     @PostMapping(value = "/upload/{fileName}")
-    public ResponseEntity updaloadFile(@PathVariable("fileName") String fileName, @RequestHeader("FilePath") String filePath) {
-        return this.s3RequestHandler.storageObjectInBucket(fileName, filePath);
+    public ResponseEntity<String> updaloadFile(@PathVariable("fileName") String fileName, @RequestHeader("FilePath") String filePath) {
+        return this.s3RequestHandler.storageFileInBucket(fileName, filePath);
+    }
+
+    @GetMapping(value = "/getFile/{fileName}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public @ResponseBody ResponseEntity<byte[]> getImage(@PathVariable("fileName") String fileName) {
+        return this.s3RequestHandler.getFile(fileName);
     }
 }

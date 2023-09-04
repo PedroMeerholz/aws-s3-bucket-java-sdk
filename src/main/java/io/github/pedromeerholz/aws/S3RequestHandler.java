@@ -3,6 +3,7 @@ package io.github.pedromeerholz.aws;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
@@ -19,7 +20,7 @@ public class S3RequestHandler {
         S3_CLIENT = DependencyFactory.s3Client();
         BUCKET_NAME = "aws-s3-bucket-java-sdk";
     }
-    public ResponseEntity storageObjectInBucket(String fileName, String filePath) {
+    public ResponseEntity storageFileInBucket(String fileName, String filePath) {
         try {
             PutObjectRequest putObject = PutObjectRequest.builder()
                     .bucket(this.BUCKET_NAME)
@@ -51,6 +52,24 @@ public class S3RequestHandler {
         } catch (S3Exception exception) {
             System.err.println(exception.getMessage());
             return false;
+        }
+    }
+
+    public ResponseEntity getFile(String fileName) {
+        try {
+            GetObjectRequest request = GetObjectRequest.builder()
+                    .key(fileName)
+                    .bucket(this.BUCKET_NAME)
+                    .build();
+
+            ResponseBytes<GetObjectResponse> response = this.S3_CLIENT.getObjectAsBytes(request);
+            byte[] file = response.asByteArray();
+            return new ResponseEntity(file, HttpStatus.OK);
+        } catch (NoSuchKeyException exception) {
+            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+        } catch (S3Exception exception) {
+            System.err.println(exception.getMessage());
+            return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
