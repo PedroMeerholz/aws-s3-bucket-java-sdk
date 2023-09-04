@@ -20,15 +20,15 @@ public class S3RequestHandler {
         S3_CLIENT = DependencyFactory.s3Client();
         BUCKET_NAME = "aws-s3-bucket-java-sdk";
     }
-    public ResponseEntity storageFileInBucket(String fileName, String filePath) {
+    public ResponseEntity saveImage(String imageName, String imagePath) {
         try {
             PutObjectRequest putObject = PutObjectRequest.builder()
                     .bucket(this.BUCKET_NAME)
-                    .key(fileName)
+                    .key(imageName)
                     .build();
 
-            if (!this.verifyIfFileNameExists(fileName)) {
-                this.S3_CLIENT.putObject(putObject, RequestBody.fromFile(new File(filePath)));
+            if (!this.verifyIfImageExists(imageName)) {
+                this.S3_CLIENT.putObject(putObject, RequestBody.fromFile(new File(imagePath)));
                 return new ResponseEntity("Arquivo armazenado com sucesso!", HttpStatus.CREATED);
             }
             return new ResponseEntity("Um arquivo com esse nome já existe. Favor escolher outro nome.", HttpStatus.NOT_ACCEPTABLE);
@@ -38,27 +38,10 @@ public class S3RequestHandler {
         }
     }
 
-    private boolean verifyIfFileNameExists(String fileName) {
-        try {
-            HeadObjectRequest request = HeadObjectRequest.builder()
-                    .bucket(this.BUCKET_NAME)
-                    .key(fileName)
-                    .build();
-            HeadObjectResponse response = this.S3_CLIENT.headObject(request);
-            if (response.toString().contains("404")) {
-                return false;
-            }
-            return true;
-        } catch (S3Exception exception) {
-            System.err.println(exception.getMessage());
-            return false;
-        }
-    }
-
-    public ResponseEntity getFile(String fileName) {
+    public ResponseEntity getImage(String imageName) {
         try {
             GetObjectRequest request = GetObjectRequest.builder()
-                    .key(fileName)
+                    .key(imageName)
                     .bucket(this.BUCKET_NAME)
                     .build();
 
@@ -70,6 +53,40 @@ public class S3RequestHandler {
         } catch (S3Exception exception) {
             System.err.println(exception.getMessage());
             return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ResponseEntity removeImage(String imageName) {
+        try {
+            DeleteObjectRequest request = DeleteObjectRequest.builder()
+                    .key(imageName)
+                    .bucket(this.BUCKET_NAME)
+                    .build();
+
+            if (verifyIfImageExists(imageName)) {
+                this.S3_CLIENT.deleteObject(request);
+                return new ResponseEntity("Imagem removida com sucesso", HttpStatus.OK);
+            }
+            return new ResponseEntity("A imagem informada não existe", HttpStatus.NOT_ACCEPTABLE);
+        } catch (S3Exception exception) {
+            return new ResponseEntity("Erro interno", HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private boolean verifyIfImageExists(String imageName) {
+        try {
+            HeadObjectRequest request = HeadObjectRequest.builder()
+                    .bucket(this.BUCKET_NAME)
+                    .key(imageName)
+                    .build();
+            this.S3_CLIENT.headObject(request);
+            return true;
+        } catch (NoSuchKeyException exception) {
+            return false;
+        }
+        catch (S3Exception exception) {
+            exception.printStackTrace();
+            return false;
         }
     }
 }
