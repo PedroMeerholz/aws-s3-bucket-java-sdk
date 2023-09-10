@@ -29,12 +29,35 @@ public class S3RequestHandler {
 
             if (!this.verifyIfImageExists(imageName)) {
                 this.S3_CLIENT.putObject(putObject, RequestBody.fromFile(new File(imagePath)));
-                return new ResponseEntity("Arquivo armazenado com sucesso!", HttpStatus.CREATED);
+                return new ResponseEntity(HttpStatus.CREATED);
             }
-            return new ResponseEntity("Um arquivo com esse nome já existe. Favor escolher outro nome.", HttpStatus.NOT_ACCEPTABLE);
+            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
         } catch (S3Exception exception) {
             System.err.println(exception.getMessage());
-            return new ResponseEntity("Erro interno", HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public ResponseEntity renameImage(String currentImageName, String newImageName) {
+        try {
+            if (this.verifyIfImageExists(currentImageName) && !this.verifyIfImageExists(newImageName)) {
+                CopyObjectRequest request = CopyObjectRequest.builder()
+                        .sourceBucket(this.BUCKET_NAME)
+                        .sourceKey(currentImageName)
+                        .destinationBucket(this.BUCKET_NAME)
+                        .destinationKey(newImageName)
+                        .build();
+                this.S3_CLIENT.copyObject(request);
+                this.removeImage(currentImageName);
+                return new ResponseEntity(HttpStatus.OK);
+            }
+            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+        } catch (NoSuchKeyException exception) {
+            exception.printStackTrace();
+            return new ResponseEntity(HttpStatus.NOT_ACCEPTABLE);
+        } catch (S3Exception exception) {
+            exception.printStackTrace();
+            return new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -83,8 +106,7 @@ public class S3RequestHandler {
             return true;
         } catch (NoSuchKeyException exception) {
             return false;
-        }
-        catch (S3Exception exception) {
+        } catch (S3Exception exception) {
             exception.printStackTrace();
             return false;
         }

@@ -15,8 +15,13 @@ public class FileController {
     }
 
     @PostMapping(value = "/upload/{imageName}")
-    public ResponseEntity<String> updaloadImage(@PathVariable("imageName") String imageName, @RequestHeader("ImagePath") String imagePath) {
+    public ResponseEntity updaloadImage(@PathVariable("imageName") String imageName, @RequestHeader("ImagePath") String imagePath) {
         return this.s3RequestHandler.saveImage(imageName, imagePath);
+    }
+
+    @PutMapping(value = "/rename/{currentImageName}")
+    public ResponseEntity renameImage(@PathVariable("currentImageName") String currentImageName, @RequestParam("newImageName") String newImageName) {
+        return this.s3RequestHandler.renameImage(currentImageName, newImageName);
     }
 
     @GetMapping(value = "/getFile/{imageName}", produces = MediaType.IMAGE_JPEG_VALUE)
